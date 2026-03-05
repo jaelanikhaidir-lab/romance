@@ -1,36 +1,145 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Romantic Website
 
-## Getting Started
+Romantic Website adalah aplikasi full-stack berbasis `Next.js` yang menampilkan galeri foto 3D interaktif dengan nuansa cinematic.  
+Pengunjung bisa menikmati scene partikel dan orbit foto, sementara admin bisa mengelola foto + pengaturan visual lewat dashboard.
 
-First, run the development server:
+## Fitur Utama
+
+- Landing page 3D interaktif menggunakan `react-three-fiber` + `three.js`
+- Efek partikel orbit, floating text, kamera sinematik, dan post-processing
+- Galeri foto yang diambil dari database Supabase
+- Admin panel untuk:
+  - upload/hapus foto (Cloudinary)
+  - update pengaturan scene (warna, teks, jumlah partikel)
+- Auth admin berbasis JWT + cookie session
+- API route terpisah untuk public dan admin
+- Script generator QR code untuk URL website
+
+## Tech Stack
+
+- Frontend: `Next.js 16`, `React 19`, `Tailwind CSS 4`
+- 3D: `@react-three/fiber`, `@react-three/drei`, `three`, `@react-three/postprocessing`
+- Backend/API: Next.js Route Handlers
+- Database: `Supabase` (PostgreSQL + RLS)
+- Media storage: `Cloudinary`
+- State management: `Zustand`
+- Validation: `Zod`
+- Testing: `Vitest` + integration tests
+
+## Struktur Folder Inti
+
+```txt
+src/
+  app/                    # App Router pages + API routes
+  components/
+    scene/                # Komponen 3D public scene
+    admin/                # Komponen dashboard admin
+    ui/                   # Reusable UI components
+  lib/                    # Supabase, Cloudinary, validators, helpers
+  store/                  # Zustand stores
+  __tests__/              # Unit + integration tests
+supabase/
+  schema.sql              # DB schema + RLS policies
+  seed.sql                # Initial seed data
+scripts/
+  generate-qr.mjs         # Generator QR code image
+```
+
+## Prasyarat
+
+- Node.js 18+ (disarankan Node.js 20)
+- npm
+- Akun Supabase
+- Akun Cloudinary
+
+## Setup Local
+
+1. Install dependency
+
+```bash
+npm install
+```
+
+2. Buat env file
+
+```bash
+cp .env.example .env
+```
+
+3. Isi semua variabel di `.env`
+
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+- `CLOUDINARY_UPLOAD_FOLDER`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `JWT_SECRET`
+
+4. Setup database Supabase
+
+- Jalankan isi file `supabase/schema.sql`
+- Lalu jalankan `supabase/seed.sql`
+
+5. Jalankan aplikasi
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm run dev` - jalankan development server
+- `npm run build` - build production
+- `npm run start` - run hasil build
+- `npm run lint` - linting
+- `npm run test` - jalankan test sekali
+- `npm run test:watch` - test mode watch
+- `npm run test:ui` - test verbose reporter
+- `npm run generate:qr` - generate QR image ke `public/website-qr.png`
 
-## Learn More
+## API Ringkas
 
-To learn more about Next.js, take a look at the following resources:
+Public:
+- `GET /api/public/gallery`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Admin Auth:
+- `POST /api/admin/login`
+- `POST /api/admin/logout`
+- `GET /api/admin/session`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Admin Content:
+- `GET /api/admin/images`
+- `POST /api/admin/images`
+- `DELETE /api/admin/images/[id]`
+- `GET /api/admin/settings`
+- `PUT /api/admin/settings`
+- `POST /api/admin/cloudinary-signature`
 
-## Deploy on Vercel
+## Kustomisasi Visual Cepat
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Partikel & orbit: `src/components/scene/OrbitingFrames.tsx`
+- Partikel pembentuk Love 3D: `src/components/scene/CenterSphere.tsx`
+- Floating text: `src/components/scene/FloatingMessage.tsx`
+- Scene utama: `src/components/scene/Scene3D.tsx`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
+
+Rekomendasi deploy di Vercel:
+
+1. Push project ke GitHub
+2. Import project ke Vercel
+3. Tambahkan seluruh env vars yang sama dengan `.env`
+4. Deploy
+5. Verifikasi endpoint `/` dan `/admin`
+
+## Catatan
+
+- `seed.sql` menggunakan `ON CONFLICT DO UPDATE` untuk `site_settings`, jadi menjalankan seed ulang akan memperbarui default settings.
+- Jika perubahan visual belum terlihat, lakukan hard refresh browser (`Ctrl+F5`).
