@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #f0e6d3;
+  --accent: #e8a87c;
+  --accent-soft: #d4917a;
+  --surface: #111111;
+  --surface-light: #1a1a1a;
+  --border: #2a2a2a;
+  --muted: #888888;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-surface: var(--surface);
+  --color-surface-light: var(--surface-light);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Scrollbar styling for admin pages */
+.admin-scrollable {
+  overflow-y: auto;
+}
+
+.admin-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-scrollable::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+.admin-scrollable::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.admin-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
