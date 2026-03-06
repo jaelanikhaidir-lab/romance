@@ -27,6 +27,21 @@ export default function Home() {
   const stopCinematic      = useCinematicStore((s) => s.stopCinematic);
 
   const [hasStarted, setHasStarted] = useState(false);
+  const [isMobilePortrait, setIsMobilePortrait] = useState(false);
+
+  useEffect(() => {
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    function check() {
+      setIsMobilePortrait(isMobile && window.innerHeight > window.innerWidth);
+    }
+    check();
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", check);
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", check);
+    };
+  }, []);
   const audioRef    = useRef<HTMLAudioElement | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -121,7 +136,7 @@ export default function Home() {
 
       {/* Click-anywhere overlay — shown before first Start, fades out on click */}
       <div
-        onClick={handleStart}
+        onClick={!isMobilePortrait ? handleStart : undefined}
         style={{
           position: "absolute",
           inset: 0,
@@ -130,28 +145,77 @@ export default function Home() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          gap: "1.6rem",
           zIndex: 45,
-          cursor: "pointer",
+          cursor: isMobilePortrait ? "default" : "pointer",
           opacity: hasStarted ? 0 : 1,
           pointerEvents: hasStarted ? "none" : "auto",
           transition: "opacity 0.6s ease",
         }}
       >
-        <p
-          style={{
-            color: "#f0c8a0",
-            fontFamily: "Georgia, 'Times New Roman', serif",
-            fontSize: "clamp(1rem, 2.5vw, 1.4rem)",
-            fontStyle: "italic",
-            letterSpacing: "0.06em",
-            textAlign: "center",
-            textShadow: "0 0 24px rgba(232,168,124,0.55), 0 2px 8px rgba(0,0,0,0.8)",
-            userSelect: "none",
-            pointerEvents: "none",
-          }}
-        >
-          kamu bisa click dimana aja, cantik
-        </p>
+        {isMobilePortrait ? (
+          <>
+            <style>{`
+              @keyframes tilt-phone {
+                0%   { transform: rotate(0deg); }
+                30%  { transform: rotate(-90deg); }
+                70%  { transform: rotate(-90deg); }
+                100% { transform: rotate(0deg); }
+              }
+            `}</style>
+            {/* Phone icon with tilt animation */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#f0c8a0"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                width: "clamp(3rem, 12vw, 4.5rem)",
+                height: "clamp(3rem, 12vw, 4.5rem)",
+                filter: "drop-shadow(0 0 12px rgba(232,168,124,0.5))",
+                animation: "tilt-phone 2.4s ease-in-out infinite",
+                pointerEvents: "none",
+              }}
+            >
+              <rect x="5" y="2" width="14" height="20" rx="2" />
+              <circle cx="12" cy="18" r="1" fill="#f0c8a0" stroke="none" />
+            </svg>
+            <p
+              style={{
+                color: "#f0c8a0",
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontSize: "clamp(1rem, 4.5vw, 1.3rem)",
+                fontStyle: "italic",
+                letterSpacing: "0.06em",
+                textAlign: "center",
+                textShadow: "0 0 24px rgba(232,168,124,0.55), 0 2px 8px rgba(0,0,0,0.8)",
+                userSelect: "none",
+                pointerEvents: "none",
+                margin: 0,
+              }}
+            >
+              miringin hpmu dulu, cantik
+            </p>
+          </>
+        ) : (
+          <p
+            style={{
+              color: "#f0c8a0",
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: "clamp(1rem, 2.5vw, 1.4rem)",
+              fontStyle: "italic",
+              letterSpacing: "0.06em",
+              textAlign: "center",
+              textShadow: "0 0 24px rgba(232,168,124,0.55), 0 2px 8px rgba(0,0,0,0.8)",
+              userSelect: "none",
+              pointerEvents: "none",
+            }}
+          >
+            kamu bisa click dimana aja
+          </p>
+        )}
       </div>
 
       {/* Stop button — visible only while animation is running */}
