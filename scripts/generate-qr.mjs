@@ -33,7 +33,7 @@ async function loadEnvFile() {
 }
 
 // ── SVG canvas ───────────────────────────────────────────────────────
-const MARGIN = 48;   // quiet zone padding around QR
+const MARGIN = 80;   // large quiet zone — survives WhatsApp crop/compress
 const QR_SZ  = 720;  // QR area size in px
 const W      = QR_SZ + MARGIN * 2;
 const H      = W;
@@ -58,7 +58,7 @@ const HAND_SY    = ICON_H / HAND_VB_H;
 // Background clear zone (slightly bigger than the icon)
 const CLR_PAD    = 12;
 
-function buildSVG(url) {
+function buildSVG(url, { forPng = false } = {}) {
   // Raw QR data matrix (error-correction H = 30% recovery)
   const qr    = QRCode.create(url, { errorCorrectionLevel: "H" });
   const mods  = qr.modules;
@@ -66,7 +66,10 @@ function buildSVG(url) {
   const ms    = QR_SZ / count;
   const pad   = ms * 0.08;
   const inner = (ms - 2 * pad).toFixed(1);
-  const rxMod = (ms * 0.28).toFixed(1);
+  // Less rounding for PNG so modules survive JPEG compression on WhatsApp
+  const rxMod = forPng ? (ms * 0.12).toFixed(1) : (ms * 0.28).toFixed(1);
+  // Brighter red for PNG: better contrast after WhatsApp compression
+  const modColor = forPng ? "#ff2020" : "#e01818";
 
   const qrRects = [];
   for (let row = 0; row < count; row++) {
@@ -78,6 +81,9 @@ function buildSVG(url) {
       }
     }
   }
+
+  // For PNG: skip glow filter so scanner sees crisp edges
+  const filterAttr = forPng ? "" : ' filter="url(#glow)"';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
@@ -92,7 +98,7 @@ function buildSVG(url) {
   <rect width="${W}" height="${H}" fill="#060606"/>
 
   <!-- 2. Full square QR (keeps all finder/alignment patterns intact → scannable) -->
-  <g fill="#e01818" filter="url(#glow)">
+  <g fill="${modColor}"${filterAttr}>
     ${qrRects.join("\n    ")}
   </g>
 
@@ -102,7 +108,7 @@ function buildSVG(url) {
         rx="16" fill="#060606"/>
 
   <!-- 4. Middle finger icon (centered, red, matching QR style) -->
-  <path d="${HAND_PATH}" fill="#e01818"
+  <path d="${HAND_PATH}" fill="${modColor}"
         transform="translate(${ICON_X.toFixed(1)},${ICON_Y.toFixed(1)}) scale(${HAND_SX.toFixed(4)},${HAND_SY.toFixed(4)})"/>
 
   <!-- 5. Subtle outline around the icon -->
@@ -128,17 +134,22 @@ async function main() {
   const outDir = path.join(rootDir, "public");
   await fs.mkdir(outDir, { recursive: true });
 
-  // Always write SVG (pure JS, no extra deps)
+  // Always write SVG (pure JS, no extra deps) — with glow for display
   const svgPath = path.join(outDir, "website-qr.svg");
   await fs.writeFile(svgPath, svg, "utf8");
   console.log(`SVG generated : ${svgPath}`);
 
-  // Also try PNG via sharp (installed automatically by Next.js)
+  // PNG without glow filter at 2× resolution for crisp file-based scanning
+  const svgForPng = buildSVG(targetUrl, { forPng: true });
   try {
     const sharp   = (await import("sharp")).default;
     const pngPath = path.join(outDir, "website-qr.png");
-    await sharp(Buffer.from(svg)).png().toFile(pngPath);
-    console.log(`PNG generated : ${pngPath}`);
+    const pngSide = 3200; // high-res so WhatsApp JPEG compression can't kill it
+    await sharp(Buffer.from(svgForPng), { density: 400 })
+      .resize(pngSide, pngSide, { fit: "contain", background: "#060606" })
+      .png({ compressionLevel: 1 })  // minimal PNG compression → max quality
+      .toFile(pngPath);
+    console.log(`PNG generated : ${pngPath} (${pngSide}px, WhatsApp-proof)`);
   } catch {
     console.log(`PNG skipped   — open website-qr.svg in a browser to print / scan`);
   }
