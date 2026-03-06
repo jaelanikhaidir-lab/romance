@@ -22,14 +22,14 @@ Tujuan: Membuat struktur website dan database agar dapat melayani pasangan yang 
 - [x] Tampilkan UI Loading atau Error Not Found ("Halaman Tidak Ditemukan / QR Tidak Valid") jika `slug` tidak terdaftar di database.
 
 ## 4. Pengembangan Admin Panel
-- [ ] Tambahkan Halaman/Menu "Manajemen Klien" di Admin Panel.
+- [x] Tambahkan Halaman/Menu "Manajemen Klien" di Admin Panel.
   - Form untuk membuat Klien/Pasangan Baru (Input Nama & Slug otomatis).
-- [ ] Update Form Upload Foto di Admin.
+- [x] Update Form Upload Foto di Admin.
   - Tambahkan Dropdown (Select Box) untuk memilih klien yang ingin ditambahkan fotonya.
-- [ ] Tambahkan fitur "Generate QR Code" di Admin Panel.
+- [x] Tambahkan fitur "Generate QR Code" di Admin Panel.
   - Admin dapat mendownload gambar QR Code yang mengarah otomatis ke `domain.com/[slug]`.
 
 ## 5. Testing & Penyelarasan Animasi
-- [ ] Uji coba akses `domain.com/pasangan_a` vs `domain.com/pasangan_b` (Pastikan foto yang mengorbit berbeda).
-- [ ] Uji coba efek transisi audio dan mata tertutup (`page.tsx`) agar tetap berfungsi sempurna di *Dynamic Route*.
+- [x] Uji coba akses `domain.com/pasangan_a` vs `domain.com/pasangan_b` (Pastikan foto yang mengorbit berbeda).
+- [x] Uji coba efek transisi audio dan mata tertutup (`page.tsx`) agar tetap berfungsi sempurna di *Dynamic Route*.
 - [ ] Selesai! Deploy struktur terbaru.

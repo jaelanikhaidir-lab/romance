@@ -6,6 +6,10 @@ import { Card, Spinner } from "@/components/ui";
 import { useGalleryStore, type GalleryImage } from "@/store/gallery-store";
 
 export function ImageManager() {
+  const clients = useGalleryStore((s) => s.clients);
+  const client = useGalleryStore((s) => s.client);
+  const selectedClientId = useGalleryStore((s) => s.selectedClientId);
+  const setSelectedClient = useGalleryStore((s) => s.setSelectedClient);
   const images = useGalleryStore((s) => s.images);
   const addImage = useGalleryStore((s) => s.addImage);
   const deleteImage = useGalleryStore((s) => s.deleteImage);
@@ -18,6 +22,11 @@ export function ImageManager() {
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (!files?.length) return;
+      if (!selectedClientId) {
+        setError("Pilih client terlebih dahulu sebelum upload foto");
+        e.target.value = "";
+        return;
+      }
 
       setUploading(true);
       setError(null);
@@ -47,6 +56,7 @@ export function ImageManager() {
           const uploadData = await uploadRes.json();
 
           await addImage({
+            client_id: selectedClientId,
             url: uploadData.secure_url,
             public_id: uploadData.public_id,
             width: uploadData.width,
@@ -61,7 +71,7 @@ export function ImageManager() {
         e.target.value = "";
       }
     },
-    [addImage]
+    [addImage, selectedClientId]
   );
 
   const handleDelete = useCallback(
@@ -91,25 +101,49 @@ export function ImageManager() {
           <span className="text-sm text-muted">({images.length})</span>
         </div>
 
-        <label className="relative">
-          <span
-            className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-accent-soft ${
-              uploading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <select
+            value={selectedClientId ?? ""}
+            onChange={(e) => setSelectedClient(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/50"
           >
-            <Upload className="h-4 w-4" />
-            {uploading ? "Uploading..." : "Upload Images"}
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleUpload}
-            disabled={uploading}
-            className="absolute inset-0 cursor-pointer opacity-0"
-          />
-        </label>
+            {clients.length === 0 ? (
+              <option value="">Belum ada client</option>
+            ) : (
+              clients.map((clientOption) => (
+                <option key={clientOption.id} value={clientOption.id}>
+                  {clientOption.name} (/{clientOption.slug})
+                </option>
+              ))
+            )}
+          </select>
+
+          <label className="relative">
+            <span
+              className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-accent-soft ${
+                uploading || !selectedClientId ? "cursor-not-allowed opacity-50" : ""
+              }`}
+            >
+              <Upload className="h-4 w-4" />
+              {uploading ? "Uploading..." : "Upload Images"}
+            </span>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleUpload}
+              disabled={uploading || !selectedClientId}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            />
+          </label>
+        </div>
       </div>
+
+      <p className="mb-3 text-sm text-muted">
+        {client
+          ? `Foto yang ditampilkan dan di-upload sekarang terhubung ke client ${client.name} (/${client.slug}).`
+          : "Buat atau pilih client terlebih dahulu untuk mulai upload foto."}
+      </p>
 
       {error && (
         <p className="mb-3 text-sm text-red-400">{error}</p>
@@ -124,7 +158,11 @@ export function ImageManager() {
       {images.length === 0 ? (
         <div className="flex flex-col items-center gap-2 py-12 text-muted">
           <ImageIcon className="h-10 w-10 opacity-40" />
-          <p className="text-sm">No images yet. Upload some!</p>
+          <p className="text-sm">
+            {client
+              ? `Belum ada foto untuk ${client.name}. Upload beberapa gambar.`
+              : "Belum ada client yang dipilih."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

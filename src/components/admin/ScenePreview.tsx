@@ -55,6 +55,7 @@ function PreviewCanvas() {
 }
 
 export function ScenePreview() {
+  const client = useGalleryStore((s) => s.client);
   const status = useGalleryStore((s) => s.status);
 
   return (
@@ -62,7 +63,9 @@ export function ScenePreview() {
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">
         <Eye className="h-5 w-5 text-accent" />
         <h2 className="text-lg font-semibold text-foreground">Live Preview</h2>
-        <span className="text-xs text-muted">Double-click to scatter</span>
+        <span className="text-xs text-muted">
+          {client ? `${client.name} (/${client.slug})` : "Double-click to scatter"}
+        </span>
       </div>
 
       <div className="relative aspect-video w-full">

@@ -110,7 +110,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
         audioCtxRef.current = null;
       }
     };
-  }, [musicUrl]);
+  }, [musicUrl, slug]);
 
   function ensureAudioContext() {
     if (!audioRef.current) return;
@@ -209,6 +209,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
 
   return (
     <div
+      data-testid="romantic-experience-root"
       className="relative h-screen w-screen overflow-hidden bg-black"
       style={{
         filter: isClosingEyes ? "blur(12px)" : "blur(0px)",
@@ -219,6 +220,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
       <InstructionOverlay />
 
       <div
+        data-testid="eyelid-top"
         style={{
           position: "absolute",
           top: 0,
@@ -235,6 +237,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
         }}
       />
       <div
+        data-testid="eyelid-bottom"
         style={{
           position: "absolute",
           bottom: 0,

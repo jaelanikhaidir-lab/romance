@@ -11,7 +11,8 @@ Pengunjung bisa menikmati scene partikel dan orbit foto, sementara admin bisa me
 - Galeri foto yang diambil dari database Supabase
 - Admin panel untuk:
   - upload/hapus foto (Cloudinary)
-  - update pengaturan scene (warna, teks, jumlah partikel)
+  - update pengaturan scene per client (warna, teks, jumlah partikel, URL lagu)
+  - buat client baru dan download QR code untuk `/<slug>`
 - Auth admin berbasis JWT + cookie session
 - API route terpisah untuk public dan admin
 - Script generator QR code untuk URL website
@@ -124,6 +125,9 @@ Admin Content:
 - `GET /api/admin/images?client_id=<uuid>`
 - `POST /api/admin/images`
 - `DELETE /api/admin/images/[id]`
+- `GET /api/admin/clients`
+- `POST /api/admin/clients`
+- `PUT /api/admin/clients/[id]`
 - `GET /api/admin/settings`
 - `PUT /api/admin/settings`
 - `POST /api/admin/cloudinary-signature`
@@ -149,6 +153,7 @@ Catatan public route:
 
 - `/` akan redirect ke `/default`
 - QR code multi-tenant sebaiknya diarahkan ke `/<slug>`
+- Admin panel menyediakan halaman ` /admin/clients` untuk membuat client baru, memilih client aktif, dan men-download QR code PNG yang mengarah ke `/<slug>`
 
 ## Catatan
 

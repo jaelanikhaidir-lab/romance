@@ -154,6 +154,28 @@ describe("clientSlugSchema", () => {
     it("rejects uppercase or spaced slugs", () => {
         expect(clientSlugSchema.safeParse("Pasangan Demo").success).toBe(false);
     });
+
+    it("accepts music_url as a site-relative path", () => {
+        const result = settingsSchema.safeParse({
+            sphere_color: "#e8a87c",
+            floating_text: "Only For U",
+            target_name: "My Love",
+            particle_count: 50,
+            music_url: "/audio/our-song.mp3",
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid music_url values", () => {
+        const result = settingsSchema.safeParse({
+            sphere_color: "#e8a87c",
+            floating_text: "Only For U",
+            target_name: "My Love",
+            particle_count: 50,
+            music_url: "not a valid path",
+        });
+        expect(result.success).toBe(false);
+    });
 });
 
 // ═══════════════════════════════════════════════════════════════════

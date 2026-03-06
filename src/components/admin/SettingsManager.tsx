@@ -6,6 +6,7 @@ import { Button, Card, Input } from "@/components/ui";
 import { useGalleryStore, type SiteSettings } from "@/store/gallery-store";
 
 export function SettingsManager() {
+  const client = useGalleryStore((s) => s.client);
   const settings = useGalleryStore((s) => s.settings);
   const updateSettings = useGalleryStore((s) => s.updateSettings);
 
@@ -23,7 +24,8 @@ export function SettingsManager() {
     form.sphere_color !== settings.sphere_color ||
     form.floating_text !== settings.floating_text ||
     form.target_name !== settings.target_name ||
-    form.particle_count !== settings.particle_count;
+    form.particle_count !== settings.particle_count ||
+    form.music_url !== settings.music_url;
 
   const handleChange = useCallback(
     (key: keyof SiteSettings, value: string | number) => {
@@ -56,9 +58,15 @@ export function SettingsManager() {
       <div className="mb-4 flex items-center gap-2">
         <Settings className="h-5 w-5 text-accent" />
         <h2 className="text-lg font-semibold text-foreground">
-          Site Settings
+            Client Settings
         </h2>
       </div>
+
+      <p className="mb-4 text-sm text-muted">
+        {client
+          ? `Pengaturan ini akan diterapkan ke ${client.name} (/${client.slug}).`
+          : "Pilih client terlebih dahulu untuk mengubah warna, teks, jumlah frame, dan lagu."}
+      </p>
 
       <form onSubmit={handleSave} className="flex flex-col gap-4">
         {/* Sphere Color */}
@@ -100,6 +108,14 @@ export function SettingsManager() {
           maxLength={50}
         />
 
+        <Input
+          label="Music URL"
+          value={form.music_url}
+          onChange={(e) => handleChange("music_url", e.target.value)}
+          placeholder="/message-in-a-bottle-taylor-swift.mp3"
+          maxLength={500}
+        />
+
         {/* Particle Count */}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-foreground">
@@ -129,7 +145,7 @@ export function SettingsManager() {
 
         <Button
           type="submit"
-          disabled={!dirty}
+          disabled={!dirty || !client}
           loading={saving}
           icon={<Save className="h-4 w-4" />}
           className="mt-1 self-start"
