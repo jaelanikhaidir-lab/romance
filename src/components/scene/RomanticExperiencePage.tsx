@@ -21,6 +21,13 @@ const Scene3D = dynamic(
 const DEFAULT_AUDIO_SOURCE = "/message-in-a-bottle-taylor-swift.mp3";
 const INVALID_SLUG_MESSAGE = "Halaman Tidak Ditemukan / QR Tidak Valid";
 
+const IDLE_SONGS = [
+  { name: "Valentine", url: "/Laufey - Valentine.mp3" },
+  { name: "Bitterlove", url: "/Bitterlove - Ardhito Pramono  (Lyrics video dan terjemahan).mp3" },
+  { name: "Nothing", url: "/Bruno Major - Nothing (Lyric & Chord Video).mp3" },
+  { name: "No Song Without You", url: "/HONNE - no song without you.mp3" },
+];
+
 interface RomanticExperiencePageProps {
   slug: string;
 }
@@ -34,6 +41,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
   const restartCinematic = useCinematicStore((s) => s.restartCinematic);
   const isStopped = useCinematicStore((s) => s.isStopped);
   const stopCinematic = useCinematicStore((s) => s.stopCinematic);
+  const resumeCinematic = useCinematicStore((s) => s.resumeCinematic);
   const resetCinematic = useCinematicStore((s) => s.resetCinematic);
   const hasStarted = useCinematicStore((s) => s.hasStarted);
   const setHasStarted = useCinematicStore((s) => s.setHasStarted);
@@ -43,6 +51,10 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
   const [isClosingEyes, setIsClosingEyes] = useState(false);
   const [showSongSwitcher, setShowSongSwitcher] = useState(false);
   const [activeTrack, setActiveTrack] = useState<"main" | "idle">("main");
+  const [currentIdleSongIndex, setCurrentIdleSongIndex] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [isWaitingForEyesToOpen, setIsWaitingForEyesToOpen] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const idleAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -73,6 +85,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
     setHasStarted(false);
     setIsClosingEyes(false);
     setShowSongSwitcher(false);
+    setIsWaitingForEyesToOpen(false);
     setActiveTrack("main");
     audioRef.current?.pause();
     idleAudioRef.current?.pause();
@@ -81,13 +94,41 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
   }, [fetchPublicData, resetCinematic, slug]);
 
   useEffect(() => {
-    const idleAudio = new Audio("/Laufey - Valentine.mp3");
-    idleAudio.loop = true;
-    idleAudioRef.current = idleAudio;
+    const defaultIdleAudio = new Audio(IDLE_SONGS[0].url);
+    // don't loop, we want to play the next song when it ends
+    defaultIdleAudio.loop = false;
+    idleAudioRef.current = defaultIdleAudio;
 
     return () => {
-      idleAudio.pause();
+      defaultIdleAudio.pause();
       idleGainNodeRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!idleAudioRef.current) return;
+    const idleAudio = idleAudioRef.current;
+
+    const handleIdleEnded = () => {
+      setCurrentIdleSongIndex((prevIndex) => {
+        const nextIndex = (prevIndex + 1) % IDLE_SONGS.length;
+        idleAudio.src = IDLE_SONGS[nextIndex].url;
+        idleAudio.play().catch(() => { });
+        return nextIndex;
+      });
+    };
+
+    const handleIdleTimeUpdate = () => {
+      if (idleAudio.duration) {
+        setAudioProgress((idleAudio.currentTime / idleAudio.duration) * 100);
+      }
+    };
+
+    idleAudio.addEventListener("ended", handleIdleEnded);
+    idleAudio.addEventListener("timeupdate", handleIdleTimeUpdate);
+    return () => {
+      idleAudio.removeEventListener("ended", handleIdleEnded);
+      idleAudio.removeEventListener("timeupdate", handleIdleTimeUpdate);
     };
   }, []);
 
@@ -99,26 +140,39 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     let hasClosedInThisPlay = false;
 
+    const transitionToIdle = () => {
+      hasClosedInThisPlay = true;
+      setIsClosingEyes(true);
+      setIsWaitingForEyesToOpen(true);
+      timeoutId = setTimeout(() => {
+        setIsClosingEyes(false);
+        // Wait a little bit extra for the eyes to be fully opened (~2.2s transition)
+        setTimeout(() => {
+          setShowSongSwitcher(true);
+          handleSwitchTrack("idle"); // Automatically start playing idle tracks
+          setIsWaitingForEyesToOpen(false);
+        }, 2400);
+      }, 3700);
+    };
+
     const handleTimeUpdate = () => {
-      if (
-        audio.duration &&
-        audio.duration - audio.currentTime <= 2.2 &&
-        !hasClosedInThisPlay
-      ) {
-        hasClosedInThisPlay = true;
-        setIsClosingEyes(true);
-        timeoutId = setTimeout(() => {
-          setIsClosingEyes(false);
-          // Wait a little bit extra for the eyes to be fully opened (~2.2s transition)
-          setTimeout(() => {
-            setShowSongSwitcher(true);
-          }, 2400);
-        }, 3700);
+      if (audio.duration) {
+        setAudioProgress((audio.currentTime / audio.duration) * 100);
+
+        if (
+          audio.duration - audio.currentTime <= 2.2 &&
+          !hasClosedInThisPlay
+        ) {
+          transitionToIdle();
+        }
       }
     };
 
     const handleEnded = () => {
       hasClosedInThisPlay = false;
+      if (activeTrack === "main") {
+        handleSwitchTrack("idle");
+      }
     };
 
     audio.addEventListener("timeupdate", handleTimeUpdate);
@@ -170,6 +224,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
     gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 1);
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(() => { });
+    setIsAudioPlaying(true);
 
     if (idleGainNodeRef.current && idleAudioRef.current) {
       idleGainNodeRef.current.gain.cancelScheduledValues(ctx.currentTime);
@@ -192,6 +247,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
         gain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 3);
       }
       idleAudioRef.current.play().catch(() => { });
+      setIsAudioPlaying(true);
     } else {
       if (idleAudioRef.current) {
         idleAudioRef.current.pause();
@@ -200,8 +256,55 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCinematicDone, hasStarted, isStopped]);
 
+  function handleNextTrack() {
+    if (activeTrack === "main") {
+      setCurrentIdleSongIndex(0);
+      if (idleAudioRef.current) {
+        idleAudioRef.current.src = IDLE_SONGS[0].url;
+      }
+      handleSwitchTrack("idle");
+    } else {
+      if (currentIdleSongIndex < IDLE_SONGS.length - 1) {
+        const nextIdx = currentIdleSongIndex + 1;
+        setCurrentIdleSongIndex(nextIdx);
+        if (idleAudioRef.current) {
+          idleAudioRef.current.src = IDLE_SONGS[nextIdx].url;
+          idleAudioRef.current.currentTime = 0;
+          if (isAudioPlaying) {
+            idleAudioRef.current.play().catch(() => { });
+          }
+        }
+      } else {
+        handleSwitchTrack("main");
+      }
+    }
+  }
+
+  function handlePrevTrack() {
+    if (activeTrack === "main") {
+      setCurrentIdleSongIndex(IDLE_SONGS.length - 1);
+      if (idleAudioRef.current) {
+        idleAudioRef.current.src = IDLE_SONGS[IDLE_SONGS.length - 1].url;
+      }
+      handleSwitchTrack("idle");
+    } else {
+      if (currentIdleSongIndex > 0) {
+        const prevIdx = currentIdleSongIndex - 1;
+        setCurrentIdleSongIndex(prevIdx);
+        if (idleAudioRef.current) {
+          idleAudioRef.current.src = IDLE_SONGS[prevIdx].url;
+          idleAudioRef.current.currentTime = 0;
+          if (isAudioPlaying) {
+            idleAudioRef.current.play().catch(() => { });
+          }
+        }
+      } else {
+        handleSwitchTrack("main");
+      }
+    }
+  }
+
   function handleSwitchTrack(track: "main" | "idle") {
-    if (track === activeTrack) return;
     ensureAudioContext();
     const ctx = audioCtxRef.current;
     if (!ctx) return;
@@ -223,7 +326,9 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
       idleGain.gain.setValueAtTime(idleGain.gain.value, ctx.currentTime);
       idleGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
 
-      mainAudio.play().catch(() => { });
+      if (isAudioPlaying) {
+        mainAudio.play().catch(() => { });
+      }
       mainGain.gain.cancelScheduledValues(ctx.currentTime);
       mainGain.gain.setValueAtTime(0, ctx.currentTime);
       mainGain.gain.linearRampToValueAtTime(1, ctx.currentTime + 2);
@@ -237,7 +342,9 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
       mainGain.gain.setValueAtTime(mainGain.gain.value, ctx.currentTime);
       mainGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 2);
 
-      idleAudio.play().catch(() => { });
+      if (isAudioPlaying) {
+        idleAudio.play().catch(() => { });
+      }
       idleGain.gain.cancelScheduledValues(ctx.currentTime);
       idleGain.gain.setValueAtTime(0, ctx.currentTime);
       idleGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 2);
@@ -248,10 +355,24 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
     }
   }
 
+  function handleTogglePlay() {
+    ensureAudioContext();
+    if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
+      void audioCtxRef.current.resume();
+    }
+
+    if (isAudioPlaying) {
+      handleStop();
+    } else {
+      handleResume();
+    }
+  }
+
   function handleStart() {
     setHasStarted(true);
     setIsClosingEyes(false);
     setShowSongSwitcher(false);
+    setIsWaitingForEyesToOpen(false);
     setActiveTrack("main");
     toggleZoom();
     playWithFadeIn();
@@ -260,6 +381,7 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
   function handleStartOver() {
     setIsClosingEyes(false);
     setShowSongSwitcher(false);
+    setIsWaitingForEyesToOpen(false);
     setActiveTrack("main");
     restartCinematic();
     playWithFadeIn();
@@ -270,6 +392,17 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
     stopCinematic();
     audioRef.current?.pause();
     idleAudioRef.current?.pause();
+    setIsAudioPlaying(false);
+  }
+
+  function handleResume() {
+    resumeCinematic();
+    if (activeTrack === "main") {
+      audioRef.current?.play().catch(() => { });
+    } else {
+      idleAudioRef.current?.play().catch(() => { });
+    }
+    setIsAudioPlaying(true);
   }
 
   if (status === "idle" || status === "loading") {
@@ -335,8 +468,13 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
       <SongSwitcher
         isVisible={showSongSwitcher}
         activeTrack={activeTrack}
-        onSwitch={handleSwitchTrack}
+        onNext={handleNextTrack}
+        onPrev={handlePrevTrack}
         mainSongName="Our Song"
+        idleSongName={IDLE_SONGS[currentIdleSongIndex].name}
+        isPlaying={isAudioPlaying}
+        onTogglePlay={handleTogglePlay}
+        progress={audioProgress}
       />
 
       <div
@@ -474,10 +612,10 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
         )}
       </div>
 
-      {hasStarted && !isStopped && (
+      {!isWaitingForEyesToOpen && hasStarted && !showSongSwitcher && (
         <button
-          onClick={handleStop}
-          aria-label="Stop"
+          onClick={isStopped ? handleResume : handleStop}
+          aria-label={isStopped ? "Resume" : "Stop"}
           style={{
             position: "absolute",
             bottom: "1.5rem",
@@ -507,8 +645,8 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
             e.currentTarget.style.background = "rgba(5,5,5,0.65)";
           }}
         >
-          <Square size={13} strokeWidth={1.8} />
-          <span>Stop</span>
+          {isStopped ? <Play size={13} strokeWidth={1.8} /> : <Square size={13} strokeWidth={1.8} />}
+          <span>{isStopped ? "Resume" : "Stop"}</span>
         </button>
       )}
 

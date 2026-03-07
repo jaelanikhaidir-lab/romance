@@ -1,19 +1,29 @@
 "use client";
 
-import { Disc3, Music, SkipBack, SkipForward } from "lucide-react";
+import { Disc3, Music, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 
 interface SongSwitcherProps {
     isVisible: boolean;
     activeTrack: "main" | "idle";
-    onSwitch: (track: "main" | "idle") => void;
+    onNext: () => void;
+    onPrev: () => void;
     mainSongName?: string;
+    idleSongName?: string;
+    isPlaying: boolean;
+    onTogglePlay: () => void;
+    progress: number;
 }
 
 export function SongSwitcher({
     isVisible,
     activeTrack,
-    onSwitch,
+    onNext,
+    onPrev,
     mainSongName = "Our Song",
+    idleSongName = "Valentine",
+    isPlaying,
+    onTogglePlay,
+    progress = 0,
 }: SongSwitcherProps) {
     if (!isVisible) return null;
 
@@ -21,7 +31,7 @@ export function SongSwitcher({
         <div
             style={{
                 position: "absolute",
-                bottom: "6rem",
+                bottom: "1.5rem",
                 left: "50%",
                 transform: "translateX(-50%)",
                 zIndex: 100,
@@ -35,7 +45,7 @@ export function SongSwitcher({
         }
       `}</style>
 
-            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-3 pr-4 backdrop-blur-md shadow-2xl">
+            <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-black p-3 pr-4 backdrop-blur-md shadow-2xl">
                 <p className="px-1 text-xs font-medium uppercase tracking-widest text-white/50">
                     Now Playing
                 </p>
@@ -43,7 +53,7 @@ export function SongSwitcher({
                 <div className="flex flex-row items-center gap-1">
                     {/* Previous Track Button */}
                     <button
-                        onClick={() => onSwitch(activeTrack === "main" ? "idle" : "main")}
+                        onClick={onPrev}
                         className="rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                     >
                         <SkipBack size={18} />
@@ -58,19 +68,35 @@ export function SongSwitcher({
                             </>
                         ) : (
                             <>
-                                <Disc3 size={16} className="animate-pulse" />
-                                <span className="truncate text-sm font-medium">Valentine</span>
+                                <Disc3 size={16} className="animate-pulse flex-shrink-0" />
+                                <span className="truncate text-sm font-medium">{idleSongName}</span>
                             </>
                         )}
                     </div>
 
+                    {/* Play/Pause Track Button */}
+                    <button
+                        onClick={onTogglePlay}
+                        className="rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+                    </button>
+
                     {/* Next Track Button */}
                     <button
-                        onClick={() => onSwitch(activeTrack === "main" ? "idle" : "main")}
+                        onClick={onNext}
                         className="rounded-full p-2 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
                     >
                         <SkipForward size={18} />
                     </button>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="h-1 w-full overflow-hidden rounded-full bg-white/10 mt-1">
+                    <div
+                        className="h-full bg-[#e8a87c] transition-all duration-300 ease-linear"
+                        style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                    />
                 </div>
             </div>
         </div>
