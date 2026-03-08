@@ -241,24 +241,40 @@ function InstancedPhotoFrames({
         <planeGeometry args={[FRAME_W, FRAME_H]} />
         <meshBasicMaterial color="#ffffff" />
       </instancedMesh>
-      {textures.map((tex, tIdx) => (
-        <instancedMesh
-          key={tIdx}
-          ref={(el) => {
-            if (el) photoRefs.current.set(tIdx, el);
-            else photoRefs.current.delete(tIdx);
-          }}
-          args={[undefined, undefined, instanceCounts[tIdx]]}
-          frustumCulled={false}
-          onClick={(e: ThreeEvent<MouseEvent>) => {
-            e.stopPropagation();
-            onPhotoClick(tIdx);
-          }}
-        >
-          <planeGeometry args={[FRAME_W - INSET * 2, FRAME_H - INSET * 2]} />
-          <meshBasicMaterial map={tex} toneMapped={false} />
-        </instancedMesh>
-      ))}
+      {textures.map((tex, tIdx) => {
+        let pointerDownTime = 0;
+        let pointerDownX = 0;
+        let pointerDownY = 0;
+        return (
+          <instancedMesh
+            key={tIdx}
+            ref={(el) => {
+              if (el) photoRefs.current.set(tIdx, el);
+              else photoRefs.current.delete(tIdx);
+            }}
+            args={[undefined, undefined, instanceCounts[tIdx]]}
+            frustumCulled={false}
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+              e.stopPropagation();
+              pointerDownTime = Date.now();
+              pointerDownX = e.clientX;
+              pointerDownY = e.clientY;
+            }}
+            onPointerUp={(e: ThreeEvent<PointerEvent>) => {
+              e.stopPropagation();
+              const elapsed = Date.now() - pointerDownTime;
+              const dx = Math.abs(e.clientX - pointerDownX);
+              const dy = Math.abs(e.clientY - pointerDownY);
+              if (elapsed < 300 && dx < 10 && dy < 10) {
+                onPhotoClick(tIdx);
+              }
+            }}
+          >
+            <planeGeometry args={[FRAME_W - INSET * 2, FRAME_H - INSET * 2]} />
+            <meshBasicMaterial map={tex} toneMapped={false} />
+          </instancedMesh>
+        );
+      })}
     </>
   );
 }
