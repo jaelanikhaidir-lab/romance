@@ -56,6 +56,9 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
   const [audioProgress, setAudioProgress] = useState(0);
   const [isWaitingForEyesToOpen, setIsWaitingForEyesToOpen] = useState(false);
 
+  const lightboxUrl = useGalleryStore((s) => s.lightboxUrl);
+  const closeLightbox = useGalleryStore((s) => s.closeLightbox);
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const idleAudioRef = useRef<HTMLAudioElement | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
@@ -584,111 +587,4 @@ export function RomanticExperiencePage({ slug }: RomanticExperiencePageProps) {
                 textAlign: "center",
                 textShadow: "0 0 24px rgba(232,168,124,0.55), 0 2px 8px rgba(0,0,0,0.8)",
                 userSelect: "none",
-                pointerEvents: "none",
-                margin: 0,
-                marginTop: "0.5rem",
-                opacity: 0.85,
-              }}
-            >
-              jangan lupa gedein suaranya 🔊
-            </p>
-          </>
-        ) : (
-          <p
-            style={{
-              color: "#f0c8a0",
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: "clamp(1rem, 2.5vw, 1.4rem)",
-              fontStyle: "italic",
-              letterSpacing: "0.06em",
-              textAlign: "center",
-              textShadow: "0 0 24px rgba(232,168,124,0.55), 0 2px 8px rgba(0,0,0,0.8)",
-              userSelect: "none",
-              pointerEvents: "none",
-            }}
-          >
-            {client?.name ? `kamu bisa click dimana aja, ${client.name}` : "kamu bisa click dimana aja"}
-          </p>
-        )}
-      </div>
-
-      {!isWaitingForEyesToOpen && hasStarted && !showSongSwitcher && (
-        <button
-          onClick={isStopped ? handleResume : handleStop}
-          aria-label={isStopped ? "Resume" : "Stop"}
-          style={{
-            position: "absolute",
-            bottom: "1.5rem",
-            right: "8.5rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.4rem",
-            padding: "0.55rem 0.9rem",
-            borderRadius: "999px",
-            background: "rgba(5,5,5,0.65)",
-            border: "1px solid rgba(232,168,124,0.35)",
-            color: "#e8a87c",
-            cursor: "pointer",
-            backdropFilter: "blur(8px)",
-            fontSize: "0.75rem",
-            fontFamily: "inherit",
-            letterSpacing: "0.04em",
-            transition: "border-color 0.3s, background 0.3s",
-            zIndex: 50,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "rgba(232,168,124,0.75)";
-            e.currentTarget.style.background = "rgba(5,5,5,0.85)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "rgba(232,168,124,0.35)";
-            e.currentTarget.style.background = "rgba(5,5,5,0.65)";
-          }}
-        >
-          {isStopped ? <Play size={13} strokeWidth={1.8} /> : <Square size={13} strokeWidth={1.8} />}
-          <span>{isStopped ? "Resume" : "Stop"}</span>
-        </button>
-      )}
-
-      <button
-        onClick={hasStarted ? handleStartOver : handleStart}
-        aria-label={hasStarted ? "Start Over" : "Start"}
-        style={{
-          position: "absolute",
-          bottom: "1.5rem",
-          right: "1.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.4rem",
-          padding: "0.55rem 0.9rem",
-          borderRadius: "999px",
-          background: "rgba(5,5,5,0.65)",
-          border: "1px solid rgba(232,168,124,0.35)",
-          color: "#e8a87c",
-          cursor: "pointer",
-          backdropFilter: "blur(8px)",
-          fontSize: "0.75rem",
-          fontFamily: "inherit",
-          letterSpacing: "0.04em",
-          transition: "border-color 0.3s, background 0.3s",
-          zIndex: 50,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "rgba(232,168,124,0.75)";
-          e.currentTarget.style.background = "rgba(5,5,5,0.85)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "rgba(232,168,124,0.35)";
-          e.currentTarget.style.background = "rgba(5,5,5,0.65)";
-        }}
-      >
-        {hasStarted ? (
-          <RotateCcw size={15} strokeWidth={1.8} />
-        ) : (
-          <Play size={15} strokeWidth={1.8} />
-        )}
-        <span>{hasStarted ? "Start Over" : "Start"}</span>
-      </button>
-    </div>
-  );
-}
+  
