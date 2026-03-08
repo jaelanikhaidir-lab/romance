@@ -114,6 +114,7 @@ export function Scene3D() {
           maxDistance={40}
           enableDamping
           dampingFactor={0.05}
+          makeDefault
         />
       </Canvas>
     </div>
