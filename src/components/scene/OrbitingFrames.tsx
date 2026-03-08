@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useMemo, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useRef, useMemo, useEffect, useCallback } from "react";
+import { useFrame, ThreeEvent } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useGalleryStore } from "@/store/gallery-store";
@@ -147,11 +147,13 @@ function InstancedPhotoFrames({
   count,
   scatteredPositions,
   diskAngleRef,
+  onPhotoClick,
 }: {
   textures: THREE.Texture[];
   count: number;
   scatteredPositions: THREE.Vector3[];
   diskAngleRef: React.RefObject<number>;
+  onPhotoClick: (texIdx: number) => void;
 }) {
   const borderRef = useRef<THREE.InstancedMesh>(null);
   const photoRefs = useRef<Map<number, THREE.InstancedMesh>>(new Map());
@@ -248,6 +250,10 @@ function InstancedPhotoFrames({
           }}
           args={[undefined, undefined, instanceCounts[tIdx]]}
           frustumCulled={false}
+          onClick={(e: ThreeEvent<MouseEvent>) => {
+            e.stopPropagation();
+            onPhotoClick(tIdx);
+          }}
         >
           <planeGeometry args={[FRAME_W - INSET * 2, FRAME_H - INSET * 2]} />
           <meshBasicMaterial map={tex} toneMapped={false} />
@@ -259,9 +265,15 @@ function InstancedPhotoFrames({
 
 /* ─── Main Scattered Frames Component ────────────────────────────── */
 
-function ScatteredFramesInner({ textures }: { textures: THREE.Texture[] }) {
+function ScatteredFramesInner({ textures, urls }: { textures: THREE.Texture[]; urls: string[] }) {
   const particleCount = useGalleryStore((s) => s.settings.particle_count);
   const count = Math.min(particleCount, 160);
+  const openLightbox = useGalleryStore((s) => s.openLightbox);
+
+  const handlePhotoClick = useCallback((texIdx: number) => {
+    const url = urls[texIdx];
+    if (url) openLightbox(url);
+  }, [urls, openLightbox]);
 
   const diskAngleRef = useRef(0);
   const ringGroupRef = useRef<THREE.Group>(null);
@@ -303,6 +315,7 @@ function ScatteredFramesInner({ textures }: { textures: THREE.Texture[] }) {
         count={count}
         scatteredPositions={scatteredPositions}
         diskAngleRef={diskAngleRef}
+        onPhotoClick={handlePhotoClick}
       />
     </group>
   );
@@ -311,7 +324,7 @@ function ScatteredFramesInner({ textures }: { textures: THREE.Texture[] }) {
 function OrbitingFramesWithTextures({ urls }: { urls: string[] }) {
   const textures = useTexture(urls);
   const arr = Array.isArray(textures) ? textures : [textures];
-  return <ScatteredFramesInner textures={arr} />;
+  return <ScatteredFramesInner textures={arr} urls={urls} />;
 }
 
 export function OrbitingFrames() {
