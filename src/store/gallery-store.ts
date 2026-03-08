@@ -53,6 +53,11 @@ interface GalleryState {
   // Scatter animation
   scatterMix: number;
 
+  // Lightbox
+  lightboxUrl: string | null;
+  openLightbox: (url: string) => void;
+  closeLightbox: () => void;
+
   // ── Actions — public ───────────────────────────────────────────────
   fetchPublicData: (slug: string) => Promise<void>;
   triggerScatter: () => void;
@@ -165,6 +170,7 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
   status: "idle",
   error: null,
   scatterMix: 0,
+  lightboxUrl: null,
 
   // ── Public actions ─────────────────────────────────────────────────
 
@@ -227,6 +233,9 @@ export const useGalleryStore = create<GalleryState>((set, get) => ({
       scatterTimer = null;
     }, 2000);
   },
+
+  openLightbox: (url) => set({ lightboxUrl: url }),
+  closeLightbox: () => set({ lightboxUrl: null }),
 
   // ── Admin actions ──────────────────────────────────────────────────
 
